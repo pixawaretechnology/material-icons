@@ -1,0 +1,61 @@
+<div class="app-container">
+  <header class="glass-header">
+    <div class="header-content">
+      <div class="header-top">
+        <h1>Material<span>Icons</span></h1>
+        <div class="search-box">
+          <i class="material-icons search-icon">search</i>
+          <input type="text" [formControl]="searchControl" placeholder="Search thousands of icons...">
+        </div>
+      </div>
+
+      <div class="family-selector" *ngIf="families$ | async as families">
+        <button *ngFor="let family of families" class="family-tab" [class.active]="(selectedFamily | async) === family"
+          (click)="selectFamily(family)">
+          {{ family }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="icons-stats" *ngIf="filteredIcons$ | async as icons">
+      <span>Showing {{icons.length}} icons</span>
+      <span *ngIf="isLoading | async" class="loader">Loading...</span>
+    </div>
+
+    <cdk-virtual-scroll-viewport itemSize="140" class="viewport">
+      <div class="icon-grid">
+        <div *cdkVirtualFor="let icon of filteredIcons$ | async" class="icon-card"
+          [class.selected]="(selectedIcon | async)?.name === icon.name" (click)="selectIcon(icon)">
+          <div class="icon-wrapper">
+            <!-- We use dynamic class to show correct family in preview grid if possible, 
+                 but Material Icons font usually requires specific family names. 
+                 For simplicity, we show the baseline icon in the grid. -->
+            <i class="material-icons">{{icon.name}}</i>
+          </div>
+          <span class="icon-name">{{icon.name}}</span>
+        </div>
+      </div>
+    </cdk-virtual-scroll-viewport>
+  </main>
+
+  <aside class="action-bar" *ngIf="selectedIcon | async as selected" [class.visible]="selected">
+    <div class="selected-info">
+      <div class="preview">
+        <!-- The preview in the action bar should reflect the selected family if we had the fonts loaded,
+             but since we are downloading SVGs, we show the standard icon here. -->
+        <i class="material-icons">{{selected.name}}</i>
+      </div>
+      <div class="details">
+        <h3>{{selected.name}}</h3>
+        <p>{{selected.tags.slice(0, 3).join(', ')}}</p>
+        <span class="family-badge">{{selectedFamily | async}}</span>
+      </div>
+    </div>
+    <button class="download-btn" (click)="downloadSvg()">
+      <i class="material-icons">download</i>
+      Download SVG
+    </button>
+  </aside>
+</div>
