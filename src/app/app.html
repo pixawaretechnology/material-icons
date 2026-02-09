@@ -3,6 +3,12 @@
     <div class="header-content">
       <div class="header-top">
         <h1>Material<span>Icons</span></h1>
+        <div class="set-selector">
+          <button class="set-btn" [class.active]="(selectedSet | async) === 'icons'"
+            (click)="selectSet('icons')">Icons</button>
+          <button class="set-btn" [class.active]="(selectedSet | async) === 'symbols'"
+            (click)="selectSet('symbols')">Symbols</button>
+        </div>
         <div class="search-box">
           <i class="material-icons search-icon">search</i>
           <input type="text" [formControl]="searchControl" placeholder="Search thousands of icons...">
@@ -18,34 +24,84 @@
     </div>
   </header>
 
-  <main class="content">
-    <div class="icons-stats" *ngIf="filteredIcons$ | async as icons">
-      <span>Showing {{icons.length}} icons</span>
-      <span *ngIf="isLoading | async" class="loader">Loading...</span>
+  <main class="content-wrapper">
+    <aside class="category-sidebar">
+      <h2>Categories</h2>
+      <div class="category-list" *ngIf="categories$ | async as categories">
+        <button *ngFor="let cat of categories" class="category-item" [class.active]="(selectedCategory | async) === cat"
+          (click)="selectCategory(cat)">
+          {{cat}}
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <div class="icons-stats" *ngIf="filteredIcons$ | async as icons">
+        <span>Showing {{icons.length}} icons</span>
+        <span *ngIf="isLoading | async" class="loader">Loading...</span>
+      </div>
+
+      <cdk-virtual-scroll-viewport itemSize="180" class="viewport">
+        <div class="icon-grid">
+          <div *cdkVirtualFor="let row of iconRows$ | async" class="row-wrapper">
+            <div *ngFor="let icon of row" class="icon-card"
+              [class.selected]="(selectedIcon | async)?.name === icon.name" (click)="selectIcon(icon)">
+              <div class="icon-wrapper">
+                <i [class]="getIconClass()" [ngStyle]="getStyle()">{{icon.name}}</i>
+              </div>
+              <span class="icon-name" [innerHTML]="highlightSearch(icon.name)"></span>
+            </div>
+          </div>
+        </div>
+      </cdk-virtual-scroll-viewport>
     </div>
 
-    <cdk-virtual-scroll-viewport itemSize="140" class="viewport">
-      <div class="icon-grid">
-        <div *cdkVirtualFor="let icon of filteredIcons$ | async" class="icon-card"
-          [class.selected]="(selectedIcon | async)?.name === icon.name" (click)="selectIcon(icon)">
-          <div class="icon-wrapper">
-            <!-- We use dynamic class to show correct family in preview grid if possible, 
-                 but Material Icons font usually requires specific family names. 
-                 For simplicity, we show the baseline icon in the grid. -->
-            <i class="material-icons">{{icon.name}}</i>
-          </div>
-          <span class="icon-name">{{icon.name}}</span>
+    <aside class="customize-panel" *ngIf="(selectedSet | async) === 'symbols'">
+      <h2>Customize</h2>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Weight</span>
+          <span>{{weight | async}}</span>
         </div>
+        <input type="range" min="100" max="700" step="100" [value]="weight | async"
+          (input)="updateWeight($any($event.target).value)" class="slider-input">
       </div>
-    </cdk-virtual-scroll-viewport>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Grade</span>
+          <span>{{gradeLabel | async}}</span>
+        </div>
+        <input type="range" min="0" max="2" step="1" [value]="gradeStep | async"
+          (input)="updateGrade($any($event.target).value)" class="slider-input">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Optical Size</span>
+          <span>{{opsz | async}}px</span>
+        </div>
+        <input type="range" min="20" max="48" step="1" [value]="opsz | async"
+          (input)="updateOpsz($any($event.target).value)" class="slider-input">
+      </div>
+
+      <div class="control-group toggle-group">
+        <div class="control-label" style="margin-bottom: 0;">
+          <span>Fill</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [checked]="(fill | async) === 1" (change)="toggleFill($event)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </aside>
   </main>
 
   <aside class="action-bar" *ngIf="selectedIcon | async as selected" [class.visible]="selected">
     <div class="selected-info">
       <div class="preview">
-        <!-- The preview in the action bar should reflect the selected family if we had the fonts loaded,
-             but since we are downloading SVGs, we show the standard icon here. -->
-        <i class="material-icons">{{selected.name}}</i>
+        <i [class]="getIconClass()" [ngStyle]="getStyle()">{{selected.name}}</i>
       </div>
       <div class="details">
         <h3>{{selected.name}}</h3>

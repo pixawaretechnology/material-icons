@@ -1,0 +1,8 @@
+{
+    "/metadata": {
+        "target": "https://fonts.google.com",
+        "secure": true,
+        "changeOrigin": true,
+        "logLevel": "debug"
+    }
+}
